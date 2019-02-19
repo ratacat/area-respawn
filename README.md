@@ -28,4 +28,7 @@ behaviors:
  _sourceNpcsFromAreas_ (array) - which areas to source mobs from, has no default
 
 
-    
+ ### Additional Notes
+ *This does not randomly generate mobs or dynamically adjust their level.* All it does is pull a group of npc definitions from a list of areas, and randomly choose a room with the spawner area, calculate what the level difficulty for that coordinate should be, expand it out about 20% on each side, and see if any of the npc definitions fall within that range.
+ 
+ If one can't be found, it doesn't spawn for that room. So you need a sufficiently full list of npcs with a range of levels in order to appropriately spawn an area.
