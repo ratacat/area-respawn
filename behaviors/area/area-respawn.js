@@ -36,21 +36,82 @@ module.exports = {
             for (let i = 1;i<(numRooms / 1000);i++) {
 
               //pull npc defs from a different area, or default to this one
-              let area = config.sourceNpcsFromArea || this.name;
+              let areas = config.sourceNpcsFromAreas || [this.name];
 
               //choose a random room in this area
               let key = _getRandomKey(this.rooms);
               let room = this.rooms.get(key);
 
-              //build an array of npc definitions from this area
+              //build an array of npc definitions from these areas
               let npcs = [];
               for (const [key,value] of state.MobFactory.entities) {
-                if (key.indexOf(area) > -1){
-                  npcs.push(value);
-                }
+                areas.forEach(function(area){
+                  if (key.indexOf(area) > -1){
+                    npcs.push(value);
+                  }
+                });
               }
 
-              //randomy choose one and turn it into an object
+              //determines whether to scale on the x axis or y
+              var scaleMobLevelOnAxis = config.scaleMobLevelOnAxis;
+
+              //since the rooms of an area are fed into a map, they are in order, however, when using procedurally generated areas, there map be gaps in the coordinates. So in order to calculate what the appropriate level range of a mob should be for any particular room, we are going to use the rows instead of the coordinate values.
+
+              //lets calculate number of rows in the area
+              if (scaleMobLevelOnAxis){
+                  let rows = [];
+
+                  //store them in area metadata
+                  if (!this.metadata.rows) {
+                    this.rooms.forEach(function(room){
+                      if (!rows.includes(room.coordinates[scaleMobLevelOnAxis])){
+                        rows.push(room.coordinates[scaleMobLevelOnAxis]);
+                      }
+                    });
+
+                    rows.sort(function(a, b) {
+                      return a - b;
+                    });
+
+                    this.metadata.numOfRows = rows.length;
+                    this.metadata.rows = rows;
+                  }
+
+
+                  //find out where this room is in the series of rows
+                  let roomRow = this.metadata.rows.findIndex(function(row){
+                      return room.coordinates[scaleMobLevelOnAxis] == row;
+                  });
+
+                  //calculate percent of distance from start, apply config.flipScale to reverse
+                  let percentMultiplier = config.flipScale ? (this.metadata.numOfRows - roomRow) / this.metadata.numOfRows : roomRow / this.metadata.numOfRows;
+
+                  let [min,max] = config.mobLevels;
+
+                  //no dividing by 0
+                  if (min === 0)
+                    min = min + 1;
+
+                  //fit row distance within min,max level bounds
+                  let level = (((max-min) * percentMultiplier) + min);
+                  
+
+                  //get npcs + or - 15% of fitted level, +1, -2 for lower level ranges with less relative range via percent
+                  let lowerBound = Math.round(level * 0.85 -2);
+                  let upperBound = Math.round(level * 1.15 +1);
+                  let levelNpcs = npcs.filter(function(npc){
+                    if (npc.level >= lowerBound){
+                      if (npc.level <= upperBound){
+                        return true;
+                      }
+                    }
+                  });
+
+                  npcs = levelNpcs;
+
+              }
+
+              //randomly choose one and turn it into an object
               let npc = _.sample(npcs);
               if (typeof npc === 'string') {
                 npc = { id: npc };
@@ -87,4 +148,4 @@ module.exports = {
     }
   }
 };
-
+                  
