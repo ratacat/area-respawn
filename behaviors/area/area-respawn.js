@@ -5,17 +5,19 @@ const { Random } = require('rando-js');
 const _ = require('lodash');
 
 /**
- * Behavior for having a constant respawn tick happening every [interval]
- * seconds. As opposed to one giant full area respawn every 10 minutes this will
- * constantly try to respawn an entity (item/npc) in an area's rooms based on
- * the entity's respawn chance until it hits the entity's maxLoad for the room.
- *
- * config:
- *   interval: number=30
- *.  spawner
-          scaleMobLevelOnAxis boolean (pick an axis[x,y,z] to scale mob level upon
-          scaleMobLevel array (level range for spawning mobs)
-          mobToRoomRatio float (greater then 0)
+ * Behavior for spawning mobs in an area without hardcoding specific spawn points.
+ * 
+ * Example of area's manifest.yml to enable
+ *  title: Northern Reach
+ *  behaviors:
+ *    area-respawn:
+        spawner: true
+        scaleMobLevelOnAxis: y
+        flipScale: false
+        mobLevels: [0,30] 
+        mobToRoomRatio: 0.35
+        sourceNpcsFromAreas: ["area1","otherarea"] 
+
  */
 module.exports = {
   listeners: {
@@ -55,7 +57,7 @@ module.exports = {
               //determines whether to scale on the x axis or y
               var scaleMobLevelOnAxis = config.scaleMobLevelOnAxis;
 
-              //since the rooms of an area are fed into a map, they are in order, however, when using procedurally generated areas, there map be gaps in the coordinates. So in order to calculate what the appropriate level range of a mob should be for any particular room, we are going to use the rows instead of the coordinate values.
+              //since the rooms of an area are fed into a map, they are in order, however, when using procedurally generated areas, there may be gaps in the coordinates. So in order to calculate what the appropriate level range of a mob should be for any particular room, we are going to use the rows instead of the coordinate values.
 
               //lets calculate number of rows in the area
               if (scaleMobLevelOnAxis){
